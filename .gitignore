@@ -187,6 +187,7 @@ Temporary Items
 # End of https://www.toptal.com/developers/gitignore/api/macos,intellij
 
 # env
-.env.dev
-.env.test
 .env
+.env.development
+.env.production
+.env.test
