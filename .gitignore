@@ -189,3 +189,4 @@ Temporary Items
 # env
 .env.dev
 .env.test
+.env
