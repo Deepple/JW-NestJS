@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller()
 export class AppController {
@@ -10,8 +11,8 @@ export class AppController {
     return this.appService.getHello();
   }
 
-  @Get('test-env')
-  getTestEnv(): string {
-    return this.appService.getTestEnv();
-  }
+  // @Get('test-env')
+  // getTestEnv(): string {
+  //   return this.appService.getTestEnv();
+  // }
 }
