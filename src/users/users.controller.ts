@@ -4,7 +4,7 @@ import {
   Get,
   Post,
   Req,
-  Res,
+  Res, UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { JoinRequestDto } from './dto/join.request.dto';
@@ -13,6 +13,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { UserDto } from '../common/dto/user.dto';
 import { User } from '../common/decorators/user.decorator';
 import { UndefinedToNullInterceptor } from '../common/interceptors/undefinedToNull.interceptor';
+import {LocalAuthGuard} from "../auth/local-auth.guard";
 
 @UseInterceptors(UndefinedToNullInterceptor)
 @ApiTags('USER')
@@ -41,6 +42,7 @@ export class UsersController {
     description: '성공',
   })
   @ApiOperation({ summary: '로그인' })
+  @UseGuards(LocalAuthGuard)
   @Post('login')
   logIn(@User() user) {
     return user;

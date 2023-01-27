@@ -17,12 +17,14 @@ import { Users } from './entities/Users';
 import { WorkspaceMembers } from './entities/WorkspaceMembers';
 import { Workspaces } from './entities/Workspaces';
 import { DMs } from './entities/DMs';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    AuthModule,
     UsersModule,
     WorkspacesModule,
     ChannelsModule,
@@ -50,11 +52,7 @@ import { DMs } from './entities/DMs';
       logging: true,
       keepConnectionAlive: true,
     }),
-    TypeOrmModule.forFeature([
-      Users,
-      WorkspaceMembers,
-      ChannelMembers,
-    ]),
+    TypeOrmModule.forFeature([Users, WorkspaceMembers, ChannelMembers]),
   ],
   controllers: [AppController],
   providers: [AppService, UsersService],
