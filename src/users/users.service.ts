@@ -4,11 +4,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Users } from '../entities/Users';
 import { JoinRequestDto } from './dto/join.request.dto';
+import { WorkspaceMembers } from '../entities/WorkspaceMembers';
+import { ChannelMembers } from '../entities/ChannelMembers';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(Users) private usersRepository: Repository<Users>,
+    @InjectRepository(WorkspaceMembers)
+    private workspaceMemberRepository: Repository<WorkspaceMembers>,
+    @InjectRepository(ChannelMembers)
+    private channelMembersRepository: Repository<ChannelMembers>,
   ) {}
 
   async findByEmail(email: string) {
@@ -25,13 +31,21 @@ export class UsersService {
       throw new UnauthorizedException('이미 존재하는 사용자 입니다.');
     }
     const hashedPassword = await bcrypt.hash(password, 12);
-    const result = await this.usersRepository.save({
+    const joined_user = await this.usersRepository.save({
       email,
       nickname,
       password: hashedPassword,
     });
-    if (result) {
-      const { password, updatedAt, deletedAt, ...userWithoutPassword } = result;
+    await this.workspaceMemberRepository.save({
+      UserId: joined_user.id,
+      WorkspaceId: 1,
+    });
+    await this.channelMembersRepository.save({
+      UserId: joined_user.id,
+      ChannelId: 1,
+    });
+    if (joined_user) {
+      const { password, ...userWithoutPassword } = joined_user;
       return userWithoutPassword;
     }
   }
