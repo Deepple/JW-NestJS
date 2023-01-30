@@ -1,7 +1,11 @@
 import bcrypt from 'bcrypt';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Users } from '../entities/Users';
 import { JoinRequestDto } from './dto/join.request.dto';
 import { WorkspaceMembers } from '../entities/WorkspaceMembers';
@@ -15,6 +19,7 @@ export class UsersService {
     private workspaceMemberRepository: Repository<WorkspaceMembers>,
     @InjectRepository(ChannelMembers)
     private channelMembersRepository: Repository<ChannelMembers>,
+    private dataSource: DataSource,
   ) {}
 
   async findByEmail(email: string) {
@@ -26,27 +31,43 @@ export class UsersService {
 
   async JoinUsers(userData: JoinRequestDto) {
     const { email, nickname, password } = userData;
-    const user = await this.usersRepository.findOne({ where: { email } });
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    const user = await queryRunner.manager
+      .getRepository(Users)
+      .findOne({ where: { email } });
     if (user) {
-      throw new UnauthorizedException('이미 존재하는 사용자 입니다.');
+      throw new ForbiddenException('이미 존재하는 사용자입니다');
     }
     const hashedPassword = await bcrypt.hash(password, 12);
-    const joined_user = await this.usersRepository.save({
-      email,
-      nickname,
-      password: hashedPassword,
-    });
-    await this.workspaceMemberRepository.save({
-      UserId: joined_user.id,
-      WorkspaceId: 1,
-    });
-    await this.channelMembersRepository.save({
-      UserId: joined_user.id,
-      ChannelId: 1,
-    });
-    if (joined_user) {
+    try {
+      const joined_user = await queryRunner.manager.getRepository(Users).save({
+        email,
+        nickname,
+        password: hashedPassword,
+      });
+      const workspaceMember = queryRunner.manager
+        .getRepository(WorkspaceMembers)
+        .create();
+      workspaceMember.UserId = joined_user.id;
+      workspaceMember.WorkspaceId = 1;
+      await queryRunner.manager
+        .getRepository(WorkspaceMembers)
+        .save(workspaceMember);
+      await queryRunner.manager.getRepository(ChannelMembers).save({
+        UserId: joined_user.id,
+        ChannelId: 1,
+      });
+      await queryRunner.commitTransaction();
       const { password, ...userWithoutPassword } = joined_user;
       return userWithoutPassword;
+    } catch (error) {
+      console.error(error);
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
   }
 }
