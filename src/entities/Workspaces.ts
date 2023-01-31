@@ -16,18 +16,36 @@ import { DMs } from './DMs';
 import { Mentions } from './Mentions';
 import { WorkspaceMembers } from './WorkspaceMembers';
 import { Users } from './Users';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 @Index('name', ['name'], { unique: true })
 @Index('url', ['url'], { unique: true })
 @Index('OwnerId', ['OwnerId'], {})
 @Entity({ schema: 'sleact', name: 'workspaces' })
 export class Workspaces {
+  @ApiProperty({
+    example: '1',
+    description: '워크스페이스 ID',
+  })
   @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
   id: number;
 
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    example: '워크스페이스1',
+    description: '워크스페이스명',
+  })
   @Column('varchar', { name: 'name', unique: true, length: 30 })
   name: string;
 
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    example: 'https://example.workspace1.com',
+    description: 'url 주소',
+  })
   @Column('varchar', { name: 'url', unique: true, length: 30 })
   url: string;
 
